@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC实例管理面板</title>
+    <style>
+        * {
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        body {
+            background-color:#141519;
+            color:#e5e7eb;
+            display:flex;
+            min-height:100vh;
+        }
+        .sidebar {
+            width:220px;
+            background:#1b1c22;
+            padding:24px 16px;
+            border-right:1px solid #272830;
+        }
+        .sidebar h2 {
+            font-size:19px;
+            margin-bottom:28px;
+            color:#ffffff;
+            font-weight:600;
+        }
+        .sidebar a {
+            display:block;
+            padding:12px 14px;
+            border-radius:8px;
+            color:#a1a8b3;
+            text-decoration:none;
+            margin-bottom:6px;
+            transition: all 0.2s ease;
+        }
+        .sidebar a.active {
+            background:#272830;
+            color:#54a0ff;
+        }
+        .sidebar a:hover {
+            background:#272830;
+            color:#ffffff;
+        }
+        .main {
+            flex:1;
+            padding:28px 32px;
+        }
+        .header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:24px;
+        }
+        .header h1 {
+            font-size:24px;
+            font-weight:600;
+        }
+        .btn-add {
+            padding:10px 20px;
+            background:#2563eb;
+            color:#fff;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            text-decoration:none;
+            display:inline-block;
+            transition: background 0.2s ease;
+        }
+        .btn-add:hover {
+            background:#3b82f6;
+        }
+        .btn-add:active {
+            transform: scale(0.97);
+        }
+        .card-wrap {
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px,1fr));
+            gap:18px;
+        }
+        .card {
+            background:#1b1c22;
+            border:1px solid #272830;
+            border-radius:12px;
+            padding:20px;
+            transition: 0.2s ease;
+        }
+        .card:hover {
+            border-color:#333642;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .card h3 {
+            font-size:18px;
+            margin-bottom:10px;
+        }
+        .status-run {color:#4ade80;}
+        .status-stop {color:#f87171;}
+        .card p {
+            color:#9ca3af;
+            margin:7px 0;
+            font-size:14px;
+        }
+        .card-actions {
+            margin-top:14px;
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .card .btn-conn {
+            padding:9px 14px;
+            background:#2563eb;
+            color:#fff;
+            border:none;
+            border-radius:7px;
+            text-decoration:none;
+            display:inline-block;
+            font-size:14px;
+            transition:0.2s;
+        }
+        .card .btn-conn:hover {
+            background:#3b82f6;
+        }
+        .card .btn-del {
+            padding:9px 14px;
+            background:#dc2626;
+            color:#fff;
+            border:none;
+            border-radius:7px;
+            font-size:14px;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .card .btn-del:hover {
+            background:#ef4444;
+        }
+        .empty-tip {
+            width:100%;
+            padding:60px 20px;
+            text-align:center;
+            color:#6b7280;
+            font-size:17px;
+        }
+        .res-info{
+            font-size:13px;
+            margin:4px 0;
+            color:#b0b8c4;
+        }
+        ::-webkit-scrollbar {width:6px;height:6px;}
+        ::-webkit-scrollbar-thumb {background:#333642;border-radius:3px;}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>MC管理面板</h2>
+        <a class="active" href="/">实例列表</a>
+        <a href="/create">新建实例</a>
+        <a href="/market">资源下载</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>服务器实例</h1>
+            <a class="btn-add" href="/create">新建实例</a>
+        </div>
+        <div class="card-wrap" id="cardWrap">
+            {% if instances | length == 0 %}
+                <div class="empty-tip">暂无实例</div>
+            {% else %}
+                {% for item in instances %}
+                <div class="card" data-inst-id="{{item[0]}}">
+                    <h3>{{item[1]}}</h3>
+                    <p>核心：{{item[2]}} | 版本：{{item[3]}}</p>
+                    <p>端口：{{item[4]}}</p>
+                    <p>内存限制：{{item[5]}} / {{item[6]}}</p>
+                    <p>状态：
+                        {% if item[7] == "running" %}
+                        <span class="status-run">● 运行中</span>
+                        {% else %}
+                        <span class="status-stop">● 已停止</span>
+                        {% endif %}
+                    </p>
+                    <div class="res-info">📦磁盘：<span class="disk-text">--</span></div>
+                    <div class="res-info">🧠内存实际：<span class="mem-text">--</span></div>
+                    <div class="card-actions">
+                        <a class="btn-conn" href="/instance/{{item[0]}}">进入控制台</a>
+                        <button class="btn-del" data-id="{{item[0]}}" data-name="{{item[1]}}">删除</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+<script>
+async function refreshAllStatus(){
+    const resp = await fetch("/api/instance/all_status");
+    const json = await resp.json();
+    if(json.code!==0) return;
+    json.data.forEach(item=>{
+        const card = document.querySelector(`.card[data-inst-id="${item.id}"]`);
+        if(!card) return;
+        card.querySelector(".disk-text").innerText = item.disk_human;
+        card.querySelector(".mem-text").innerText = item.mem_human;
+    })
+}
+setInterval(refreshAllStatus,2500);
+refreshAllStatus();
+
+// 删除实例: 先确认弹窗, 再请求, 结果必弹窗, 成功刷新列表
+document.querySelectorAll(".btn-del").forEach(btn=>{
+    btn.onclick = async ()=>{
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        if(!confirm(`确定要删除实例「${name}」吗？\n实例文件夹和所有存档会被一起删除，此操作不可恢复！`)) return;
+        try{
+            const r = await fetch(`/api/instance/delete/${id}`,{method:"POST"});
+            const j = await r.json();
+            if(j.code===0){
+                alert("✅ " + j.msg);
+                location.reload();
+            }else{
+                alert("❌ " + j.msg);
+            }
+        }catch(e){
+            alert("❌ 请求失败: " + e);
+        }
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资源市场</title>
+    <style>
+        * {
+            margin:0;padding:0;box-sizing:border-box;
+            font-family: system-ui,-apple-system,sans-serif;
+        }
+        body {
+            background:#141519;
+            color:#e5e7eb;
+            display:flex;
+            min-height:100vh;
+        }
+        .sidebar {
+            width:220px;
+            background:#1b1c22;
+            padding:24px 16px;
+            border-right:1px solid #272830;
+        }
+        .sidebar h2 {
+            font-size:19px;
+            margin-bottom:28px;
+            color:#fff;
+            font-weight:600;
+        }
+        .sidebar a {
+            display:block;
+            padding:12px 14px;
+            border-radius:8px;
+            color:#a1a8b3;
+            text-decoration:none;
+            margin-bottom:6px;
+            transition: all 0.2s ease;
+        }
+        .sidebar a.active {
+            background:#272830;
+            color:#54a0ff;
+        }
+        .sidebar a:hover {
+            background:#272830;
+            color:#ffffff;
+        }
+        .main {
+            flex:1;
+            padding:32px;
+        }
+        h1{
+            margin-bottom:36px;
+            font-size:24px;
+            font-weight:600;
+        }
+        .big-btn{
+            display:block;
+            margin-bottom:16px;
+            padding:18px 20px;
+            background:#1b1c22;
+            border:1px solid #272830;
+            color:#fff;
+            text-decoration:none;
+            border-radius:12px;
+            font-size:17px;
+            transition:0.25s ease;
+        }
+        .big-btn:hover{
+            background:#2563eb;
+            border-color:#2563eb;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+            transform: translateY(-2px);
+        }
+        .tip{
+            color:#787f8c;
+            font-size:14px;
+            margin-top:32px;
+            line-height:1.6;
+        }
+        ::-webkit-scrollbar {width:6px;height:6px;}
+        ::-webkit-scrollbar-thumb {background:#333642;border-radius:3px;}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>MC管理面板</h2>
+        <a href="/">← 返回实例列表</a>
+        <a class="active" href="/market">资源市场</a>
+    </div>
+    <div class="main">
+        <h1>资源市场总入口</h1>
+        <a class="big-btn" href="/market/mod">🗜️ Mod下载（Fabric/Forge/NeoForge）</a>
+        <a class="big-btn" href="/market/plugin">🔌 插件下载（Paper/Folia/Purpur/Spigot）</a>
+        <a class="big-btn" href="/market/datapack">📜 数据包下载</a>
+        <div class="tip">
+提示：当前文件下载至公共目录 <code>download_cache</code>。后续版本将支持直接分发到各个服务器实例目录。
+        </div>
+    </div>
+</body>
+</html>

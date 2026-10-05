@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实例控制台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif;}
+body{background:#141519;color:#e5e7eb;display:flex;min-height:100vh;}
+.sidebar{width:220px;background:#1b1c22;padding:24px 16px;border-right:1px solid #272830;}
+.sidebar h2{font-size:19px;margin-bottom:28px;color:#fff;}
+.sidebar a{display:block;padding:12px 14px;border-radius:8px;color:#a1a8b3;text-decoration:none;margin-bottom:6px;}
+.sidebar a:hover{background:#272830;color:#fff;}
+.main{flex:1;padding:24px;}
+.header{display:flex;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+#log{background:#0b0c10;border:1px solid #272830;border-radius:8px;padding:14px;height:400px;overflow-y:auto;font-family:monospace;font-size:13px;white-space:pre-wrap;margin-bottom:14px;}
+.input-area{display:flex;gap:8px;}
+#cmdInput{flex:1;padding:10px;background:#1b1c22;border:1px solid #272830;border-radius:8px;color:#fff;}
+button{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;}
+#startBtn{background:#22c55e;color:#fff;}
+#stopBtn{background:#ef4444;color:#fff;}
+#sendBtn{background:#2563eb;color:#fff;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>MC管理面板</h2>
+    <a href="/">← 返回实例列表</a>
+    <a href="/market">资源下载</a>
+</div>
+<div class="main">
+    <div class="header">
+        <h1>实例控制台</h1>
+        <div style="margin-right:auto;margin-left:12px;font-size:14px;color:#b0b8c4;">
+            资源：内存 <span id="instMem">--</span> | 磁盘 <span id="instDisk">--</span>
+        </div>
+        <button id="startBtn">启动</button>
+        <button id="stopBtn">停止</button>
+    </div>
+    <div id="log"></div>
+    <div class="input-area">
+        <input id="cmdInput" placeholder="输入服务器命令，例如 /help">
+        <button id="sendBtn">发送</button>
+    </div>
+</div>
+<script>
+const instId = {{inst_id}};
+const logBox = document.getElementById("log");
+const cmdInput = document.getElementById("cmdInput");
+
+async function refreshLog(){
+    const res = await fetch(`/api/instance/logs/${instId}`);
+    const j = await res.json();
+    logBox.innerText = j.data.join("\n");
+    logBox.scrollTop = logBox.scrollHeight;
+}
+setInterval(refreshLog,1200);
+refreshLog();
+
+// 统一处理启动/停止: 弹窗告知结果, 请求异常也不静默
+async function postAction(url){
+    try{
+        const r = await fetch(url,{method:"POST"});
+        const j = await r.json();
+        if(j.code===0){
+            alert("✅ " + j.msg);
+        }else{
+            alert("❌ " + j.msg);
+        }
+    }catch(e){
+        alert("❌ 请求失败: " + e);
+    }
+}
+document.getElementById("startBtn").onclick = ()=> postAction(`/api/instance/start/${instId}`);
+document.getElementById("stopBtn").onclick  = ()=> postAction(`/api/instance/stop/${instId}`);
+document.getElementById("sendBtn").onclick = sendCmd;
+cmdInput.onkeydown = e=>{if(e.key==="Enter") sendCmd();}
+async function sendCmd(){
+    const cmd = cmdInput.value.trim();
+    if(!cmd) return;
+    await fetch(`/api/instance/sendcmd/${instId}`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({cmd:cmd})
+    });
+    cmdInput.value = "";
+}
+
+async function refreshSingleStatus(){
+    const res = await fetch(`/api/instance/status/${instId}`);
+    const j = await res.json();
+    if(j.code===0){
+        document.getElementById("instMem").innerText = j.data.mem_human;
+        document.getElementById("instDisk").innerText = j.data.disk_human;
+    }
+}
+setInterval(refreshSingleStatus,2500);
+refreshSingleStatus();
+</script>
+</body>
+</html>

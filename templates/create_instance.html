@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建实例向导</title>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;font-family: system-ui,-apple-system,sans-serif;}
+        body {background:#141519;color:#e5e7eb;display:flex;min-height:100vh;}
+        .sidebar {width:220px;background:#1b1c22;padding:24px 16px;border-right:1px solid #272830;}
+        .sidebar h2 {font-size:19px;margin-bottom:28px;color:#fff;font-weight:600;}
+        .sidebar a {display:block;padding:12px 14px;border-radius:8px;color:#a1a8b3;text-decoration:none;margin-bottom:6px;transition: all 0.2s ease;}
+        .sidebar a:hover {background:#272830;color:#ffffff;}
+        .main {flex:1;padding:32px;max-width:900px;}
+        h1{margin-bottom:20px;font-size:24px;font-weight:600;}
+        .step{display:none;}
+        .step.active{display:block;}
+        .core-item{background:#1b1c22;border:1px solid #272830;border-radius:10px;padding:16px;margin-bottom:12px;cursor:pointer;transition:0.2s;}
+        .core-item:hover{border-color:#2563eb;background:#20212b;}
+        .core-item.selected{border-color:#2563eb;background:#20212b;}
+        .core-item h3{margin-bottom:6px;}
+        .core-item .cat{color:#54a0ff;font-size:13px;margin-bottom:8px;}
+        .core-item .good{color:#4ade80;font-size:14px;margin:4px 0;}
+        .core-item .bad{color:#f87171;font-size:14px;margin:4px 0;}
+        .form-item{margin-bottom:20px;}
+        label{display:block;margin-bottom:8px;color:#d1d5db;font-size:15px;}
+        input,select{width:100%;padding:12px 14px;background:#1b1c22;border:1px solid #272830;border-radius:8px;color:#fff;font-size:15px;}
+        .btn{padding:12px 24px;background:#2563eb;color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:16px;margin-right:10px;}
+        .btn-back{background:#444654;}
+        .tip{color:#9ca3af;font-size:13px;margin-top:4px;}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>MC管理面板</h2>
+        <a href="/">← 返回实例列表</a>
+        <a href="/market">资源下载</a>
+    </div>
+    <div class="main">
+        <h1>新建实例向导</h1>
+        <div id="step1" class="step active">
+            <h2>第1步：选择服务端核心</h2>
+            <div id="coreList"></div>
+            <div style="margin-top:20px">
+                <button class="btn" id="toStep2" disabled>下一步</button>
+            </div>
+        </div>
+        <div id="step2" class="step">
+            <h2>第2步：选择版本 & 配置参数</h2>
+            <div class="form-item">
+                <label>实例名称</label>
+                <input id="instName" placeholder="例如 生存服">
+            </div>
+            <div class="form-item">
+                <label>游戏版本</label>
+                <select id="verSelect">
+                    <option>加载版本列表...</option>
+                </select>
+            </div>
+            <div class="form-item">
+                <label>端口</label>
+                <input id="portInput" value="25565">
+            </div>
+            <div class="form-item">
+                <label>最小内存 Xms</label>
+                <input id="xmsInput" value="1G">
+                <div class="tip">Termux建议不超过1G</div>
+            </div>
+            <div class="form-item">
+                <label>最大内存 Xmx</label>
+                <input id="xmxInput" value="2G">
+                <div class="tip">Termux上限推荐2G</div>
+            </div>
+            <div style="margin-top:20px">
+                <button class="btn btn-back" id="backStep1">上一步</button>
+                <button class="btn" id="createBtn">创建并下载核心</button>
+            </div>
+        </div>
+    </div>
+<script>
+let selectedCore = null;
+const step1 = document.getElementById("step1");
+const step2 = document.getElementById("step2");
+const toStep2Btn = document.getElementById("toStep2");
+const coreListWrap = document.getElementById("coreList");
+const verSelect = document.getElementById("verSelect");
+
+async function loadCores(){
+    const res = await fetch("/api/core/list");
+    const json = await res.json();
+    json.data.forEach(core=>{
+        const div = document.createElement("div");
+        div.className = "core-item";
+        div.dataset.id = core.id;
+        div.innerHTML = `
+            <h3>${core.name}</h3>
+            <div class="cat">${core.category}</div>
+            <div>${core.desc}</div>
+            <div class="good">✅优点：${core.good}</div>
+            <div class="bad">⚠️缺点：${core.bad}</div>
+        `;
+        div.onclick = ()=>{
+            document.querySelectorAll(".core-item").forEach(i=>i.classList.remove("selected"));
+            div.classList.add("selected");
+            selectedCore = core.id;
+            toStep2Btn.disabled = false;
+        }
+        coreListWrap.appendChild(div);
+    })
+}
+
+toStep2Btn.onclick = async ()=>{
+    step1.classList.remove("active");
+    step2.classList.add("active");
+    verSelect.innerHTML = "<option>加载版本...</option>";
+    try{
+        const res = await fetch(`/api/core/versions?core=${selectedCore}`);
+        const j = await res.json();
+        if(j.code !== 0){
+            alert("获取版本失败：" + j.msg);
+            return;
+        }
+        verSelect.innerHTML = "";
+        j.data.reverse().forEach(v=>{
+            const opt = document.createElement("option");
+            opt.value = v;
+            opt.innerText = v;
+            verSelect.appendChild(opt);
+        })
+    }catch(err){
+        alert("前端请求异常，后端服务无响应！");
+        console.error(err);
+    }
+}
+
+document.getElementById("backStep1").onclick = ()=>{
+    step2.classList.remove("active");
+    step1.classList.add("active");
+}
+
+document.getElementById("createBtn").onclick = async ()=>{
+    const payload = {
+        name: document.getElementById("instName").value,
+        core_type: selectedCore,
+        version: verSelect.value,
+        port: document.getElementById("portInput").value,
+        xmx: document.getElementById("xmxInput").value,
+        xms: document.getElementById("xmsInput").value
+    }
+    const resp = await fetch("/api/download_core",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+    })
+    const ret = await resp.json();
+    alert(ret.msg);
+    location.href="/";
+}
+
+loadCores();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+.back-btn{color:#3b82f6;margin-bottom:12px;display:inline-block}
+.control-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.btn.start{background:#22c55e}
+.btn.stop{background:#ef4444}
+.log-box{background:#111;height:320px;overflow:auto;padding:12px;border-radius:10px;white-space:pre-wrap;font-size:14px;margin:12px 0;color:#d1d1d1}
+.cmd-input-area{display:flex;gap:8px;margin-top:12px}
+.cmd-input-area input{flex:1;padding:14px;border-radius:10px;border:none;font-size:16px}
+.btn.send{background:#3b82f6}
